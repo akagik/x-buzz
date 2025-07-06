@@ -114,6 +114,11 @@ TWITTER_BEARER_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 # Web UI Configuration (ブラウザから管理画面を使う場合)
 WEB_UI_ENABLED=true
 
+# Twitter API Tier Configuration
+# 'free', 'basic', 'pro', 'enterprise' のいずれかを設定
+# デフォルトは 'free' (無料プラン)
+TWITTER_API_TIER=free
+
 # その他の設定はデフォルト値のままでOK
 ```
 
@@ -170,6 +175,49 @@ WEB_UI_ENABLED=true
 - **アクティビティログ**: 最近のシステム動作を確認
 
 注意: Web UIはデフォルトでは無効になっています。セキュリティのため、本番環境では適切なアクセス制御を設定することを推奨します。
+
+## Twitter API アクセスレベルについて
+
+### 無料プラン (Free Tier) の制限事項
+
+2025年現在、Twitter API v2の無料プランでは以下の制限があります：
+
+**利用可能な機能:**
+- ✅ ツイートの投稿 (POST /2/tweets)
+- ✅ メディアアップロード (2025年3月31日まで)
+- ✅ OAuth認証
+
+**利用できない機能:**
+- ❌ ツイートの検索
+- ❌ ユーザーの検索
+- ❌ タイムラインの取得
+- ❌ フォロー/フォロー解除
+- ❌ いいね/いいね解除
+- ❌ トレンドの取得
+- ❌ ユーザー情報の取得
+
+### 有料プランへのアップグレード
+
+全機能を利用するには、**Basic tier ($100/月)** 以上へのアップグレードが必要です。
+
+アップグレード方法：
+1. [Twitter Developer Portal](https://developer.x.com/en/portal/products) にアクセス
+2. 「Products」から「X API」を選択
+3. 「Basic」または上位プランを選択して購入
+
+### 無料プランでの利用方法
+
+無料プランでは、AI生成コンテンツを使用した自動投稿のみが可能です：
+
+```bash
+# 環境変数で無料プランを明示的に設定（デフォルト）
+TWITTER_API_TIER=free
+
+# AI生成コンテンツで投稿を作成
+npm start
+```
+
+システムは自動的に無料プランを検出し、利用可能な機能のみを使用します。
 
 ## 使用方法
 

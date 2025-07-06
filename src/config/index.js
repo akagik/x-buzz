@@ -22,6 +22,7 @@ const config = {
     accessToken: process.env.TWITTER_ACCESS_TOKEN,
     accessTokenSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET,
     bearerToken: process.env.TWITTER_BEARER_TOKEN,
+    apiTier: process.env.TWITTER_API_TIER || 'free',
   },
   
   database: {

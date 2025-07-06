@@ -3,6 +3,7 @@ import openaiClient from '../api/openai-client.js';
 import rateLimiter from '../rate-limiting/rate-limiter.js';
 import db from '../database/db.js';
 import logger from '../utils/logger.js';
+import apiTierManager from '../config/api-tier.js';
 
 export default {
   description: '自動フォロー機能（AIエージェントが判断）',
@@ -11,6 +12,17 @@ export default {
   async execute(args = {}) {
     try {
       const { limit = 5, keywords = '' } = args;
+      
+      // Check if follow actions are available
+      if (!apiTierManager.canPerformAction('follow')) {
+        return {
+          success: false,
+          message: 'Auto-follow requires Basic tier or higher',
+          currentTier: apiTierManager.getTier(),
+          upgradeUrl: 'https://developer.x.com/en/portal/products',
+          info: 'The free tier only allows posting tweets. Upgrade to Basic tier for follow functionality.'
+        };
+      }
       
       const rateCheck = await rateLimiter.checkLimit('follow');
       if (!rateCheck.allowed) {
@@ -30,6 +42,12 @@ export default {
         const searchResults = await twitterClient.searchUsers(keywords, {
           maxResults: 50,
         });
+        
+        // Check if search returned an error object
+        if (searchResults && searchResults.error) {
+          logger.warn('User search not available:', searchResults.error);
+          return searchResults; // Return the error response
+        }
         
         for (const user of searchResults) {
           db.saveUser({

@@ -1,10 +1,20 @@
 import twitterClient from '../api/twitter-client.js';
 import contentManager from '../database/content-manager.js';
 import logger from '../utils/logger.js';
+import apiTierManager from '../config/api-tier.js';
 
 class ContentSearcher {
   async searchForViralContent() {
     try {
+      // Check if we can perform search operations
+      if (!apiTierManager.canPerformAction('search')) {
+        logger.warn('Search operations are not available on free tier. Upgrade to basic tier for this feature.');
+        return {
+          message: 'Search requires Basic tier or higher',
+          currentTier: apiTierManager.getTier(),
+          upgradeUrl: 'https://developer.x.com/en/portal/products'
+        };
+      }
       const searchQueries = await this.generateSearchQueries();
       let totalFound = 0;
 
@@ -44,6 +54,11 @@ class ContentSearcher {
 
   async searchTwitterContent(query) {
     try {
+      // Double-check search capability
+      if (!apiTierManager.canPerformAction('search')) {
+        logger.warn('Twitter search not available on free tier');
+        return [];
+      }
       const tweets = await twitterClient.searchTweets(query, {
         maxResults: 50,
       });
@@ -98,6 +113,10 @@ class ContentSearcher {
 
   async searchUserTimelines() {
     try {
+      if (!apiTierManager.canPerformAction('readTimelines')) {
+        logger.warn('Timeline reading not available on free tier');
+        return;
+      }
       const influencers = await this.getInfluencerList();
       
       for (const userId of influencers) {

@@ -3,6 +3,7 @@ import openaiClient from '../api/openai-client.js';
 import rateLimiter from '../rate-limiting/rate-limiter.js';
 import db from '../database/db.js';
 import logger from '../utils/logger.js';
+import apiTierManager from '../config/api-tier.js';
 
 export default {
   description: '他ユーザーの自動いいね機能',
@@ -11,6 +12,17 @@ export default {
   async execute(args = {}) {
     try {
       const { limit = 10, strategy = 'engagement' } = args;
+      
+      // Check if like actions are available
+      if (!apiTierManager.canPerformAction('like')) {
+        return {
+          success: false,
+          message: 'Auto-like requires Basic tier or higher',
+          currentTier: apiTierManager.getTier(),
+          upgradeUrl: 'https://developer.x.com/en/portal/products',
+          info: 'The free tier only allows posting tweets. Upgrade to Basic tier for like functionality.'
+        };
+      }
       
       const rateCheck = await rateLimiter.checkLimit('like');
       if (!rateCheck.allowed) {
@@ -25,6 +37,11 @@ export default {
       const maxLikes = Math.min(limit, rateCheck.remaining);
       
       const tweets = await this.getTweetsToLike(strategy, maxLikes * 2);
+      
+      // Check if getTweetsToLike returned an error
+      if (tweets && tweets.error) {
+        return tweets;
+      }
       
       const liked = [];
       let likeCount = 0;
@@ -94,7 +111,10 @@ export default {
           const timeline = await twitterClient.getUserTimeline(user.user_id, {
             maxResults: 5,
           });
-          tweets.push(...timeline);
+          // Skip if error response
+          if (timeline && !timeline.error) {
+            tweets.push(...timeline);
+          }
         }
         
         return tweets.sort((a, b) => 
@@ -104,13 +124,21 @@ export default {
       
       case 'trending': {
         const trends = await twitterClient.getTrendingTopics();
+        // Return error if trends fetch failed
+        if (trends && trends.error) {
+          return trends;
+        }
+        
         const tweets = [];
         
-        for (const trend of trends.slice(0, 3)) {
+        for (const trend of (trends || []).slice(0, 3)) {
           const searchResults = await twitterClient.searchTweets(trend.name, {
             maxResults: 10,
           });
-          tweets.push(...searchResults);
+          // Skip if error response
+          if (searchResults && !searchResults.error) {
+            tweets.push(...searchResults);
+          }
         }
         
         return tweets.slice(0, limit);

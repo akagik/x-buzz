@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X-buzz UI Test</title>
+</head>
+<body>
+    <h1>X-buzz API テスト</h1>
+    
+    <div id="result" style="border: 1px solid #ccc; padding: 10px; margin: 10px 0; min-height: 100px;">
+        結果がここに表示されます
+    </div>
+    
+    <button onclick="testStats()">統計情報を取得</button>
+    <button onclick="testCommand('show-stats')">show-statsコマンド実行</button>
+    <button onclick="testCommand('show-schedule')">show-scheduleコマンド実行</button>
+    
+    <script>
+        const API_BASE = 'http://localhost:3000/api';
+        
+        function showResult(data) {
+            document.getElementById('result').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+        }
+        
+        async function testStats() {
+            try {
+                console.log('Fetching stats...');
+                const response = await fetch(`${API_BASE}/stats`);
+                const data = await response.json();
+                console.log('Stats response:', data);
+                showResult(data);
+            } catch (error) {
+                console.error('Error:', error);
+                showResult({error: error.message});
+            }
+        }
+        
+        async function testCommand(command) {
+            try {
+                console.log(`Executing command: ${command}`);
+                const response = await fetch(`${API_BASE}/commands/${command}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({}),
+                });
+                
+                const data = await response.json();
+                console.log('Command response:', data);
+                showResult(data);
+            } catch (error) {
+                console.error('Error:', error);
+                showResult({error: error.message});
+            }
+        }
+    </script>
+</body>
+</html>
