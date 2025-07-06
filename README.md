@@ -30,3 +30,86 @@ x-buzz/
 ├── logs/             # ログファイル
 └── tests/            # テストファイル
 ```
+
+## セットアップ
+
+### 1. 依存関係のインストール
+
+```bash
+npm install
+```
+
+### 2. 環境変数の設定
+
+`.env.example`をコピーして`.env`を作成し、必要なAPIキーを設定します：
+
+```bash
+cp .env.example .env
+```
+
+以下の項目を設定してください：
+
+- **OpenAI API**: https://platform.openai.com でAPIキーを取得
+- **X (Twitter) API**: https://developer.twitter.com でアプリケーションを作成してキーを取得
+
+### 3. 起動
+
+```bash
+npm start
+```
+
+開発モードで起動する場合：
+
+```bash
+npm run dev
+```
+
+### 4. Web UIへのアクセス
+
+ブラウザで http://localhost:3000 にアクセスすると、管理画面が表示されます。
+
+## 使用方法
+
+### コマンド一覧
+
+- **search-viral**: バズったコンテンツを検索
+- **post-content**: コンテンツを投稿
+- **show-content-list**: 保存されたコンテンツ一覧を表示
+- **show-schedule**: 投稿スケジュールを表示
+- **search-users**: ユーザーを検索
+- **auto-follow**: 自動フォロー（AIが判断）
+- **auto-like**: 自動いいね
+- **analyze-performance**: パフォーマンス分析
+- **update-settings**: 設定の更新
+- **show-stats**: 統計情報の表示
+
+### API エンドポイント
+
+- `GET /api/stats` - システム統計情報
+- `GET /api/commands` - 利用可能なコマンド一覧
+- `POST /api/commands/:name` - コマンドの実行
+- `GET /api/rate-limits` - レート制限の状態
+- `GET /api/schedules` - スケジュール一覧
+
+## 設定項目
+
+### レート制限
+
+- `DAILY_POST_LIMIT`: 1日の投稿数上限（デフォルト: 10）
+- `DAILY_FOLLOW_LIMIT`: 1日のフォロー数上限（デフォルト: 50）
+- `DAILY_LIKE_LIMIT`: 1日のいいね数上限（デフォルト: 100）
+
+### スケジュール
+
+- `POST_SCHEDULE_CRON`: 投稿スケジュール（cron形式）
+- `CONTENT_SEARCH_CRON`: コンテンツ検索スケジュール（cron形式）
+
+## 注意事項
+
+- X (Twitter) APIの利用規約を遵守してください
+- レート制限を超えないよう注意してください
+- 自動化の使用は各プラットフォームの規約に従ってください
+
+## ライセンス
+
+MIT
