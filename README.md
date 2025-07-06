@@ -47,10 +47,72 @@ npm install
 cp .env.example .env
 ```
 
-以下の項目を設定してください：
+#### OpenAI APIキーの取得
 
-- **OpenAI API**: https://platform.openai.com でAPIキーを取得
-- **X (Twitter) API**: https://developer.twitter.com でアプリケーションを作成してキーを取得
+1. https://platform.openai.com にアクセス
+2. サインアップまたはログイン
+3. 右上のアカウントメニューから「API keys」を選択
+4. 「Create new secret key」をクリック
+5. キーをコピーして`.env`の`OPENAI_API_KEY`に設定
+
+#### X (Twitter) API v2キーの取得
+
+1. **Developer Portalへアクセス**
+   - https://developer.twitter.com にアクセス
+   - Twitterアカウントでログイン
+
+2. **開発者アカウントの申請**（未登録の場合）
+   - 「Sign up」から開発者アカウントを申請
+   - 使用目的を英語で記入（例：「Building an AI-powered social media automation tool for personal use」）
+   - 承認を待つ（通常数分〜数時間）
+
+3. **プロジェクトとアプリの作成**
+   - Developer Portalで「+ Create Project」をクリック
+   - プロジェクト名を入力（例：「X-buzz AI Agent」）
+   - アプリ名を入力（例：「x-buzz-app」）
+   - 「Complete」をクリック
+
+4. **APIキーの取得**
+   - アプリ作成後、以下のキーが表示されます：
+     - **API Key** → `.env`の`TWITTER_API_KEY`に設定
+     - **API Key Secret** → `.env`の`TWITTER_API_SECRET`に設定
+   - これらは一度しか表示されないので必ず保存してください
+
+5. **アクセストークンの生成**
+   - アプリの設定ページで「Keys and tokens」タブを開く
+   - 「Access Token and Secret」セクションで「Generate」をクリック
+   - 以下を取得：
+     - **Access Token** → `.env`の`TWITTER_ACCESS_TOKEN`に設定
+     - **Access Token Secret** → `.env`の`TWITTER_ACCESS_TOKEN_SECRET`に設定
+
+6. **Bearer Tokenの取得**（オプション）
+   - 「Keys and tokens」タブの「Bearer Token」セクション
+   - 「Generate」をクリック
+   - **Bearer Token** → `.env`の`TWITTER_BEARER_TOKEN`に設定
+
+7. **アプリの権限設定**
+   - 「Settings」タブ → 「User authentication settings」で「Set up」をクリック
+   - **App permissions**を「Read and write」に設定
+   - **Type of App**を「Web App, Automated App or Bot」に設定
+   - **Callback URI**に`http://localhost:3000/callback`を入力（使用しない場合でも必要）
+   - **Website URL**に任意のURL（例：`http://localhost:3000`）を入力
+   - 「Save」をクリック
+
+#### .envファイルの設定例
+
+```bash
+# OpenAI API Configuration
+OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# X (Twitter) API Configuration
+TWITTER_API_KEY=xxxxxxxxxxxxxxxxxxxxxxxxx
+TWITTER_API_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWITTER_ACCESS_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWITTER_ACCESS_TOKEN_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWITTER_BEARER_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# その他の設定はデフォルト値のままでOK
+```
 
 ### 3. 起動
 
@@ -104,11 +166,32 @@ npm run dev
 - `POST_SCHEDULE_CRON`: 投稿スケジュール（cron形式）
 - `CONTENT_SEARCH_CRON`: コンテンツ検索スケジュール（cron形式）
 
+## トラブルシューティング
+
+### APIキー関連のエラー
+
+- **「Missing required configuration」エラー**
+  - `.env`ファイルが正しく作成されているか確認
+  - 必須のAPIキーがすべて設定されているか確認
+
+- **Twitter API認証エラー**
+  - アプリの権限が「Read and write」になっているか確認
+  - アクセストークンを再生成してみる
+  - APIキーに余分なスペースが含まれていないか確認
+
+- **レート制限エラー**
+  - Twitter API v2の制限：
+    - 投稿: 200件/15分（ユーザー認証）
+    - いいね: 1000件/24時間
+    - フォロー: 400件/24時間
+  - アプリ内でさらに厳しい制限を設定しています
+
 ## 注意事項
 
 - X (Twitter) APIの利用規約を遵守してください
 - レート制限を超えないよう注意してください
 - 自動化の使用は各プラットフォームの規約に従ってください
+- APIキーは絶対に公開リポジトリにコミットしないでください
 
 ## ライセンス
 
