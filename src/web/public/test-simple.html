@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>X-buzz Simple Test</title>
+</head>
+<body>
+    <h1>X-buzz APIテスト</h1>
+    <button onclick="testApi()">APIテスト実行</button>
+    <div id="result"></div>
+
+    <script>
+        async function testApi() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'テスト中...';
+            
+            try {
+                const response = await fetch('/api/commands/show-stats', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({})
+                });
+                
+                const data = await response.json();
+                resultDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                resultDiv.innerHTML = 'エラー: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

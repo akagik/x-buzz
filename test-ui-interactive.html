@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X-buzz UI Test - Interactive</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            padding: 20px;
+            background-color: #f5f7fa;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background-color: #1da1f2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        button:hover {
+            background-color: #1991db;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            min-height: 100px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+        .success {
+            color: #4caf50;
+        }
+        .error {
+            color: #f44336;
+        }
+        .loading {
+            color: #2196f3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>X-buzz API インタラクティブテスト</h1>
+        <p>ボタンをクリックしてAPIの動作を確認してください。</p>
+        
+        <div>
+            <button onclick="testCommand('show-stats')">統計情報を取得</button>
+            <button onclick="testCommand('search-viral')">バズコンテンツ検索</button>
+            <button onclick="testCommand('show-schedule')">スケジュール表示</button>
+            <button onclick="testCommand('auto-follow', {limit: 3})">自動フォロー (制限3)</button>
+            <button onclick="testCommand('auto-like', {limit: 5})">自動いいね (制限5)</button>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000/api';
+        const resultDiv = document.getElementById('result');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString('ja-JP');
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : '';
+            resultDiv.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>\n`;
+            resultDiv.scrollTop = resultDiv.scrollHeight;
+        }
+
+        async function testCommand(command, args = {}) {
+            log(`コマンド実行開始: ${command}`, 'loading');
+            
+            // ボタンを一時的に無効化
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(btn => btn.disabled = true);
+            
+            try {
+                const url = `${API_BASE}/commands/${command}`;
+                log(`リクエスト送信: POST ${url}`);
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(args),
+                });
+                
+                log(`レスポンスステータス: ${response.status}`);
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    log(`✅ 成功: ${command}`, 'success');
+                    log('レスポンスデータ:\n' + JSON.stringify(data, null, 2));
+                    
+                    // 特定のデータを強調表示
+                    if (data.result) {
+                        if (data.result.message) {
+                            log(`メッセージ: ${data.result.message}`, 'success');
+                        }
+                        if (data.result.upgradeInfo) {
+                            log(`⚠️ ${data.result.upgradeInfo.message}`, 'error');
+                        }
+                        if (data.result.currentTier) {
+                            log(`現在のAPIレベル: ${data.result.currentTier}`);
+                        }
+                    }
+                } else {
+                    log(`❌ エラー: ${data.error || 'Unknown error'}`, 'error');
+                    if (data.message) {
+                        log(`詳細: ${data.message}`, 'error');
+                    }
+                }
+            } catch (error) {
+                log(`❌ ネットワークエラー: ${error.message}`, 'error');
+                log('CORSエラーの可能性があります。開発者ツールのコンソールを確認してください。', 'error');
+            } finally {
+                // ボタンを再度有効化
+                buttons.forEach(btn => btn.disabled = false);
+                log('---', 'info');
+            }
+        }
+
+        // ページ読み込み時のテスト
+        window.addEventListener('DOMContentLoaded', () => {
+            log('テストページが読み込まれました');
+            log('API Base URL: ' + API_BASE);
+            
+            // APIの疎通確認
+            fetch(`${API_BASE}/stats`)
+                .then(response => response.json())
+                .then(data => {
+                    log('✅ API接続成功', 'success');
+                })
+                .catch(error => {
+                    log('❌ API接続失敗: ' + error.message, 'error');
+                });
+        });
+    </script>
+</body>
+</html>
