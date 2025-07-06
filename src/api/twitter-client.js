@@ -60,19 +60,26 @@ class TwitterClient {
 
   async searchUsers(query, options = {}) {
     try {
-      apiTierManager.requireCapability('getUsers');
+      apiTierManager.requireCapability('search');
       
-      const users = await this.v2Client.searchUsers(query, {
-        max_results: options.maxResults || 100,
+      // Twitter API v2 doesn't have direct user search
+      // We'll search tweets and extract unique users
+      const tweets = await this.v2Client.search(`${query} -is:retweet`, {
+        max_results: options.maxResults || 50,
+        'tweet.fields': 'author_id',
         'user.fields': 'name,username,public_metrics,verified,description,created_at',
-        ...options,
+        expansions: 'author_id',
       });
 
-      const userList = [];
-      for await (const user of users) {
-        userList.push(user);
+      const users = new Map();
+      
+      if (tweets.includes?.users) {
+        for (const user of tweets.includes.users) {
+          users.set(user.id, user);
+        }
       }
 
+      const userList = Array.from(users.values());
       logger.info(`Found ${userList.length} users for query: ${query}`);
       return userList;
     } catch (error) {

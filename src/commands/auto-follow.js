@@ -39,28 +39,35 @@ export default {
       let potentialUsers = db.getPotentialFollowTargets(maxFollows * 2);
       
       if (potentialUsers.length < maxFollows && keywords) {
-        const searchResults = await twitterClient.searchUsers(keywords, {
-          maxResults: 50,
-        });
-        
-        // Check if search returned an error object
-        if (searchResults && searchResults.error) {
-          logger.warn('User search not available:', searchResults.error);
-          return searchResults; // Return the error response
-        }
-        
-        for (const user of searchResults) {
-          db.saveUser({
-            user_id: user.id,
-            platform: 'twitter',
-            username: user.username,
-            display_name: user.name,
-            bio: user.description,
-            metrics: user.public_metrics,
+        try {
+          const searchResults = await twitterClient.searchUsers(keywords, {
+            maxResults: 20, // Reduced to avoid timeout
           });
+          
+          // Check if search returned an error object
+          if (searchResults && searchResults.error) {
+            logger.warn('User search not available:', searchResults.error);
+            return searchResults; // Return the error response
+          }
+          
+          if (Array.isArray(searchResults)) {
+            for (const user of searchResults) {
+              db.saveUser({
+                user_id: user.id,
+                platform: 'twitter',
+                username: user.username,
+                display_name: user.name,
+                bio: user.description,
+                metrics: user.public_metrics,
+              });
+            }
+            
+            potentialUsers = [...potentialUsers, ...searchResults];
+          }
+        } catch (error) {
+          logger.error('Error searching users:', error);
+          // Continue with existing potential users if search fails
         }
-        
-        potentialUsers = [...potentialUsers, ...searchResults];
       }
       
       const followed = [];
@@ -70,25 +77,41 @@ export default {
         if (followCount >= maxFollows) break;
         
         try {
-          const analysis = user.analysis_result || await openaiClient.analyzeUser({
-            id: user.user_id || user.id,
-            username: user.username,
-            bio: user.bio || user.description,
-            metrics: user.metrics || user.public_metrics,
-          });
+          logger.info(`Analyzing user @${user.username} for follow decision...`);
           
-          if (!user.analysis_result) {
-            db.db.prepare(`
-              UPDATE users 
-              SET analysis_result = @analysis_result, updated_at = CURRENT_TIMESTAMP
-              WHERE user_id = @user_id
-            `).run({
-              user_id: user.user_id || user.id,
-              analysis_result: JSON.stringify(analysis),
+          let analysis = user.analysis_result;
+          if (!analysis) {
+            // Add timeout for OpenAI analysis
+            const analysisPromise = openaiClient.analyzeUser({
+              id: user.user_id || user.id,
+              username: user.username,
+              bio: user.bio || user.description,
+              metrics: user.metrics || user.public_metrics,
             });
+            
+            // 10 second timeout for analysis
+            analysis = await Promise.race([
+              analysisPromise,
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Analysis timeout')), 10000)
+              )
+            ]);
+            
+            if (analysis) {
+              db.db.prepare(`
+                UPDATE users 
+                SET analysis_result = @analysis_result, updated_at = CURRENT_TIMESTAMP
+                WHERE user_id = @user_id
+              `).run({
+                user_id: user.user_id || user.id,
+                analysis_result: JSON.stringify(analysis),
+              });
+            }
           }
           
-          if (analysis.should_follow && analysis.follow_score > 0.7) {
+          if (analysis && analysis.should_follow && analysis.follow_score > 0.7) {
+            logger.info(`Following @${user.username} (score: ${analysis.follow_score})`);
+            
             await rateLimiter.consume('follow');
             await twitterClient.followUser(user.user_id || user.id);
             
@@ -109,10 +132,13 @@ export default {
             });
             
             followCount++;
-            logger.info(`Followed user: @${user.username}`);
+            logger.info(`Successfully followed user: @${user.username}`);
+          } else {
+            logger.info(`Skipped @${user.username} - Score: ${analysis?.follow_score || 'N/A'}`);
           }
         } catch (error) {
-          logger.error(`Error processing user ${user.username}:`, error);
+          logger.error(`Error processing user ${user.username}:`, error.message);
+          // Continue with next user on error
         }
       }
       

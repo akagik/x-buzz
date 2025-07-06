@@ -28,8 +28,15 @@ async function runCommand() {
     for (let i = 1; i < args.length; i++) {
       const arg = args[i];
       if (arg.startsWith('--')) {
-        const [key, value] = arg.substring(2).split('=');
-        commandArgs[key] = value || true;
+        const equalIndex = arg.indexOf('=');
+        if (equalIndex > -1) {
+          const key = arg.substring(2, equalIndex);
+          const value = arg.substring(equalIndex + 1);
+          commandArgs[key] = value;
+        } else {
+          const key = arg.substring(2);
+          commandArgs[key] = true;
+        }
       }
     }
 
