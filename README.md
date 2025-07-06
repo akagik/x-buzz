@@ -114,7 +114,24 @@ TWITTER_BEARER_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 # その他の設定はデフォルト値のままでOK
 ```
 
-### 3. 起動
+### 3. APIキーのテスト
+
+設定が正しいか確認するため、テストスクリプトを実行：
+
+```bash
+# 基本的な接続テスト
+node test-twitter-api.js
+
+# テストツイートも投稿する場合
+node test-twitter-api.js --post
+
+# プロジェクト全体の設定をテスト
+node quick-test.js
+```
+
+### 4. 起動
+
+テストが成功したら、アプリケーションを起動：
 
 ```bash
 npm start
@@ -126,7 +143,7 @@ npm start
 npm run dev
 ```
 
-### 4. Web UIへのアクセス
+### 5. Web UIへのアクセス
 
 ブラウザで http://localhost:3000 にアクセスすると、管理画面が表示されます。
 
