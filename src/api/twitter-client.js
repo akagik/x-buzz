@@ -34,12 +34,15 @@ class TwitterClient {
     try {
       apiTierManager.requireCapability('search');
       
+      // Remove maxResults from options to avoid conflict
+      const { maxResults, ...otherOptions } = options;
+      
       const jsTweets = await this.v2Client.search(query, {
-        max_results: options.maxResults || 100,
+        max_results: maxResults || 100,
         'tweet.fields': 'created_at,public_metrics,author_id,conversation_id',
         'user.fields': 'name,username,public_metrics,verified',
         'expansions': 'author_id',
-        ...options,
+        ...otherOptions,
       });
 
       const tweets = [];
@@ -165,11 +168,14 @@ class TwitterClient {
     try {
       apiTierManager.requireCapability('readTimelines');
       
+      // Remove maxResults from options to avoid conflict
+      const { maxResults, ...otherOptions } = options;
+      
       const timeline = await this.v2Client.userTimeline(userId, {
-        max_results: options.maxResults || 100,
+        max_results: maxResults || 100,
         'tweet.fields': 'created_at,public_metrics,author_id',
         exclude: 'retweets,replies',
-        ...options,
+        ...otherOptions,
       });
 
       const tweets = [];
@@ -188,13 +194,15 @@ class TwitterClient {
     }
   }
 
-  async getTrendingTopics(query = 'lang:ja') {
+  async getTrendingTopics(query = 'trending lang:ja') {
     try {
       apiTierManager.requireCapability('getTrends');
       
       // Twitter API v2では直接的なトレンド取得エンドポイントがないため、
       // 人気のツイートを検索して代替とする
-      const popularTweets = await this.v2Client.search(query, {
+      // lang:jaだけではエラーになるため、検索語句を追加
+      const searchQuery = query.includes(' ') ? query : `trending ${query}`;
+      const popularTweets = await this.v2Client.search(searchQuery, {
         max_results: 50,
         'tweet.fields': 'created_at,public_metrics,author_id',
         'user.fields': 'name,username,public_metrics',
@@ -315,10 +323,13 @@ class TwitterClient {
     try {
       apiTierManager.requireCapability('getUsers');
       
+      // Remove maxResults from options to avoid conflict
+      const { maxResults, ...otherOptions } = options;
+      
       const followers = await this.v2Client.followers(userId, {
-        max_results: options.maxResults || 100,
+        max_results: maxResults || 100,
         'user.fields': 'name,username,public_metrics,verified,description',
-        ...options,
+        ...otherOptions,
       });
 
       const followerList = [];
