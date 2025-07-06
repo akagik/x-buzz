@@ -9,6 +9,7 @@ class CommandHandler {
   async registerDefaultCommands() {
     const commands = [
       { name: 'search-viral', module: './search-viral-content.js' },
+      { name: 'search-viral-test', module: './search-viral-test.js' },
       { name: 'post-content', module: './post-content.js' },
       { name: 'show-content-list', module: './show-content-list.js' },
       { name: 'show-schedule', module: './show-schedule.js' },

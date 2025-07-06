@@ -6,13 +6,13 @@ import freeTierContent from '../services/free-tier-content.js';
 
 export default {
   description: '過去のSNS投稿からバズったコンテンツを検索',
-  usage: 'search-viral [--platform=twitter] [--limit=50]',
+  usage: 'search-viral [--platform=twitter] [--limit=50] [--simple]',
   
   async execute(args = {}) {
     try {
-      const { platform = 'all', limit = 50 } = args;
+      const { platform = 'all', limit = 50, simple = false } = args;
       
-      logger.info('Starting viral content search', { platform, limit });
+      logger.info('Starting viral content search', { platform, limit, simple });
       
       // Check if we're on free tier
       if (!apiTierManager.canPerformAction('search')) {
@@ -43,13 +43,55 @@ export default {
         };
       }
       
-      // Normal search for paid tiers
-      if (platform === 'all' || platform === 'twitter') {
-        await contentSearcher.searchForViralContent();
+      // Simple search mode - minimal API calls
+      if (simple) {
+        try {
+          const simpleQuery = 'min_retweets:100 min_faves:500 -is:retweet';
+          const tweets = await contentSearcher.searchTwitterContent(simpleQuery);
+          
+          return {
+            message: 'Simple viral content search completed',
+            stats: {
+              found: tweets.length,
+              analyzed: 0,
+              platform: 'twitter',
+              mode: 'simple'
+            },
+            topContents: tweets.slice(0, 5).map((tweet) => ({
+              id: tweet.id,
+              platform: 'twitter',
+              content: tweet.text?.substring(0, 100) + '...',
+              metrics: tweet.public_metrics,
+              author: tweet.author?.username || 'unknown'
+            })),
+          };
+        } catch (error) {
+          if (error.code === 429) {
+            return {
+              success: false,
+              message: 'Rate limit reached. Please try again later.',
+              resetTime: new Date(error.rateLimit?.reset * 1000).toLocaleString('ja-JP')
+            };
+          }
+          throw error;
+        }
       }
       
-      if (platform === 'all' || platform === 'youtube') {
-        await contentSearcher.searchYouTubeContent();
+      // Normal search for paid tiers
+      try {
+        if (platform === 'all' || platform === 'twitter') {
+          await contentSearcher.searchForViralContent();
+        }
+        
+        if (platform === 'all' || platform === 'youtube') {
+          await contentSearcher.searchYouTubeContent();
+        }
+      } catch (error) {
+        if (error.code === 429) {
+          logger.warn('Rate limited during search, returning existing content');
+        } else {
+          throw error;
+        }
       }
       
       const viralContents = await contentManager.getViralContents(

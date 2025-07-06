@@ -46,10 +46,18 @@ class ContentSearcher {
       'すごい min_faves:200',
     ];
 
-    const trends = await twitterClient.getTrendingTopics();
-    const trendQueries = trends.slice(0, 5).map((trend) => `${trend.name} min_faves:50`);
-
-    return [...baseQueries, ...trendQueries];
+    try {
+      const trends = await twitterClient.getTrendingTopics();
+      const trendQueries = trends.slice(0, 5).map((trend) => `${trend.name} min_faves:50`);
+      return [...baseQueries, ...trendQueries];
+    } catch (error) {
+      if (error.code === 429) {
+        logger.warn('Rate limited while fetching trends, using base queries only');
+        return baseQueries;
+      }
+      logger.error('Error fetching trends for queries:', error);
+      return baseQueries;
+    }
   }
 
   async searchTwitterContent(query) {
@@ -76,6 +84,10 @@ class ContentSearcher {
       logger.info(`Found ${viralTweets.length} viral tweets for query: ${query}`);
       return viralTweets;
     } catch (error) {
+      if (error.code === 429) {
+        logger.warn(`Rate limited while searching for query: ${query}`);
+        return [];
+      }
       logger.error('Error searching Twitter content:', error);
       throw error;
     }
@@ -85,7 +97,16 @@ class ContentSearcher {
     try {
       const trends = await twitterClient.getTrendingTopics();
       
+      // Limit searches to avoid rate limits
+      const maxTrendSearches = 3;
+      let searchCount = 0;
+      
       for (const trend of trends.slice(0, 10)) {
+        if (searchCount >= maxTrendSearches) {
+          logger.info(`Limiting trend searches to ${maxTrendSearches} to avoid rate limits`);
+          break;
+        }
+        
         try {
           const tweets = await twitterClient.searchTweets(trend.name, {
             maxResults: 20,
@@ -102,11 +123,21 @@ class ContentSearcher {
           for (const tweet of topTweets) {
             await this.saveTweetAsContent(tweet, { trending: true, trend: trend.name });
           }
+          
+          searchCount++;
         } catch (error) {
+          if (error.code === 429) {
+            logger.warn('Rate limited while searching trends, stopping trend search');
+            break;
+          }
           logger.error(`Error searching trend ${trend.name}:`, error);
         }
       }
     } catch (error) {
+      if (error.code === 429) {
+        logger.warn('Rate limited while fetching trending topics');
+        return;
+      }
       logger.error('Error searching trending content:', error);
     }
   }
