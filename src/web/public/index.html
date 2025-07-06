@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X-buzz AI Agent Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: #1da1f2;
+            color: white;
+            padding: 20px 0;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            text-align: center;
+            font-size: 2em;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            margin-bottom: 15px;
+            color: #1da1f2;
+            font-size: 1.3em;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .stat-item {
+            padding: 10px;
+            background: #f0f8ff;
+            border-radius: 4px;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #1da1f2;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        button {
+            background-color: #1da1f2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #1991db;
+        }
+        
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .command-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .rate-limit-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+        
+        .rate-limit-fill {
+            height: 100%;
+            background: #4caf50;
+            transition: width 0.3s;
+        }
+        
+        .rate-limit-warning {
+            background: #ff9800;
+        }
+        
+        .rate-limit-danger {
+            background: #f44336;
+        }
+        
+        .log-entry {
+            padding: 8px;
+            margin: 5px 0;
+            border-left: 3px solid #1da1f2;
+            background: #f9f9f9;
+            font-size: 0.9em;
+        }
+        
+        .error {
+            color: #f44336;
+            margin: 10px 0;
+        }
+        
+        .success {
+            color: #4caf50;
+            margin: 10px 0;
+        }
+        
+        #loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>X-buzz AI Agent Dashboard</h1>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div id="loading">読み込み中...</div>
+        <div id="error" class="error"></div>
+        <div id="success" class="success"></div>
+        
+        <div class="dashboard">
+            <div class="card">
+                <h2>統計情報</h2>
+                <div id="stats" class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">-</div>
+                        <div class="stat-label">総コンテンツ数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">-</div>
+                        <div class="stat-label">投稿数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">-</div>
+                        <div class="stat-label">フォロー中</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">-</div>
+                        <div class="stat-label">本日のアクション</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>レート制限</h2>
+                <div id="rateLimits">
+                    <div class="rate-limit-item">
+                        <div>投稿</div>
+                        <div class="rate-limit-bar">
+                            <div class="rate-limit-fill" style="width: 0%"></div>
+                        </div>
+                        <div>0/0</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>コマンド実行</h2>
+                <div class="command-buttons">
+                    <button onclick="executeCommand('search-viral')">バズコンテンツ検索</button>
+                    <button onclick="executeCommand('post-content')">投稿作成</button>
+                    <button onclick="executeCommand('show-schedule')">スケジュール表示</button>
+                    <button onclick="executeCommand('auto-follow', {limit: 3})">自動フォロー</button>
+                    <button onclick="executeCommand('auto-like', {limit: 5})">自動いいね</button>
+                    <button onclick="executeCommand('show-stats')">詳細統計</button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>最近のアクティビティ</h2>
+                <div id="recentLogs"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = '/api';
+        
+        function showLoading(show = true) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+        
+        function showError(message) {
+            const errorEl = document.getElementById('error');
+            errorEl.textContent = message;
+            setTimeout(() => errorEl.textContent = '', 5000);
+        }
+        
+        function showSuccess(message) {
+            const successEl = document.getElementById('success');
+            successEl.textContent = message;
+            setTimeout(() => successEl.textContent = '', 5000);
+        }
+        
+        async function fetchStats() {
+            try {
+                const response = await fetch(`${API_BASE}/stats`);
+                const data = await response.json();
+                
+                const statsEl = document.getElementById('stats');
+                if (data.database) {
+                    statsEl.innerHTML = `
+                        <div class="stat-item">
+                            <div class="stat-value">${data.database.contents.total}</div>
+                            <div class="stat-label">総コンテンツ数</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${data.database.posts.total}</div>
+                            <div class="stat-label">投稿数</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${data.database.users.following}</div>
+                            <div class="stat-label">フォロー中</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${data.database.todayInteractions}</div>
+                            <div class="stat-label">本日のアクション</div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Stats fetch error:', error);
+            }
+        }
+        
+        async function fetchRateLimits() {
+            try {
+                const response = await fetch(`${API_BASE}/rate-limits`);
+                const data = await response.json();
+                
+                const rateLimitsEl = document.getElementById('rateLimits');
+                let html = '';
+                
+                for (const [action, status] of Object.entries(data.rateLimits)) {
+                    if (status.limit) {
+                        const percentage = (status.used / status.limit) * 100;
+                        const fillClass = percentage > 80 ? 'rate-limit-danger' : 
+                                         percentage > 60 ? 'rate-limit-warning' : '';
+                        
+                        html += `
+                            <div class="rate-limit-item">
+                                <div>${action}</div>
+                                <div class="rate-limit-bar">
+                                    <div class="rate-limit-fill ${fillClass}" style="width: ${percentage}%"></div>
+                                </div>
+                                <div>${status.used}/${status.limit}</div>
+                            </div>
+                        `;
+                    }
+                }
+                
+                rateLimitsEl.innerHTML = html;
+            } catch (error) {
+                console.error('Rate limits fetch error:', error);
+            }
+        }
+        
+        async function executeCommand(command, args = {}) {
+            showLoading();
+            
+            try {
+                const response = await fetch(`${API_BASE}/commands/${command}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(args),
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess(`コマンド実行成功: ${command}`);
+                    console.log('Command result:', data);
+                    refreshDashboard();
+                } else {
+                    showError(`コマンド実行失敗: ${data.error}`);
+                }
+            } catch (error) {
+                showError(`エラー: ${error.message}`);
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        async function fetchRecentLogs() {
+            try {
+                const response = await fetch(`${API_BASE}/logs?limit=5`);
+                const data = await response.json();
+                
+                const logsEl = document.getElementById('recentLogs');
+                logsEl.innerHTML = data.logs.map(log => 
+                    `<div class="log-entry">[${log.level}] ${log.message}</div>`
+                ).join('');
+            } catch (error) {
+                console.error('Logs fetch error:', error);
+            }
+        }
+        
+        function refreshDashboard() {
+            fetchStats();
+            fetchRateLimits();
+            fetchRecentLogs();
+        }
+        
+        // Initial load
+        refreshDashboard();
+        
+        // Auto refresh every 30 seconds
+        setInterval(refreshDashboard, 30000);
+    </script>
+</body>
+</html>
