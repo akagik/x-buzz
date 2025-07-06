@@ -1,3 +1,32 @@
-# x-buzz
+# X-buzz: AI-powered Social Media Automation Agent
 
-This project was initialized with git and GitHub CLI.
+X-buzzは、X（Twitter）での自動投稿とエンゲージメントを最適化するAI駆動のソーシャルメディア自動化エージェントです。
+
+## 主な機能
+
+- **AI駆動の意思決定**: OpenAI APIを使用した自律的な判断
+- **自動投稿**: 過去のバズった投稿を分析し、最適なタイミングで投稿
+- **スマートエンゲージメント**: AIが判断する自動フォロー・いいね機能
+- **コンテンツ管理**: 複数のSNSからバズったコンテンツを収集・管理
+- **スケジューリング**: 投稿の自動スケジューリング
+- **レート制限管理**: APIレート制限に準拠した安全な操作
+- **Webインターフェース**: ブラウザから操作可能な管理画面
+
+## プロジェクト構造
+
+```
+x-buzz/
+├── src/
+│   ├── agents/         # AIエージェントロジック
+│   ├── api/           # API統合（OpenAI、X/Twitter）
+│   ├── commands/      # コマンドハンドラー
+│   ├── config/        # 設定管理
+│   ├── database/      # データストレージ
+│   ├── scheduling/    # スケジューリングシステム
+│   ├── rate-limiting/ # レート制限管理
+│   ├── web/          # Webインターフェース
+│   └── utils/        # ユーティリティ関数
+├── data/             # データ保存
+├── logs/             # ログファイル
+└── tests/            # テストファイル
+```
