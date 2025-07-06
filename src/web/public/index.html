@@ -85,7 +85,19 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 1em;
-            transition: background-color 0.3s;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: inline-block;
+            text-align: center;
+            text-decoration: none;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        
+        button:active {
+            transform: translateY(1px);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
         
         button:hover {
@@ -204,12 +216,12 @@
             <div class="card">
                 <h2>コマンド実行</h2>
                 <div class="command-buttons">
-                    <button id="btnSearchViral">バズコンテンツ検索</button>
-                    <button id="btnPostContent">投稿作成</button>
-                    <button id="btnShowSchedule">スケジュール表示</button>
-                    <button id="btnAutoFollow">自動フォロー</button>
-                    <button id="btnAutoLike">自動いいね</button>
-                    <button id="btnShowStats">詳細統計</button>
+                    <button type="button" id="btnSearchViral" class="command-btn">バズコンテンツ検索</button>
+                    <button type="button" id="btnPostContent" class="command-btn">投稿作成</button>
+                    <button type="button" id="btnShowSchedule" class="command-btn">スケジュール表示</button>
+                    <button type="button" id="btnAutoFollow" class="command-btn">自動フォロー</button>
+                    <button type="button" id="btnAutoLike" class="command-btn">自動いいね</button>
+                    <button type="button" id="btnShowStats" class="command-btn">詳細統計</button>
                 </div>
             </div>
             
@@ -424,65 +436,76 @@
         function setupEventListeners() {
             console.log('Setting up event listeners...');
             
-            const btnSearchViral = document.getElementById('btnSearchViral');
-            const btnPostContent = document.getElementById('btnPostContent');
-            const btnShowSchedule = document.getElementById('btnShowSchedule');
-            const btnAutoFollow = document.getElementById('btnAutoFollow');
-            const btnAutoLike = document.getElementById('btnAutoLike');
-            const btnShowStats = document.getElementById('btnShowStats');
-            
-            if (btnSearchViral) {
-                btnSearchViral.addEventListener('click', () => {
+            // イベント委譲を使用してより確実に設定
+            document.addEventListener('click', function(event) {
+                const target = event.target;
+                
+                if (target.id === 'btnSearchViral' || target.closest('#btnSearchViral')) {
                     console.log('Search viral clicked');
+                    event.preventDefault();
                     executeCommand('search-viral');
-                });
-            }
-            if (btnPostContent) {
-                btnPostContent.addEventListener('click', () => {
+                }
+                else if (target.id === 'btnPostContent' || target.closest('#btnPostContent')) {
                     console.log('Post content clicked');
+                    event.preventDefault();
                     executeCommand('post-content');
-                });
-            }
-            if (btnShowSchedule) {
-                btnShowSchedule.addEventListener('click', () => {
+                }
+                else if (target.id === 'btnShowSchedule' || target.closest('#btnShowSchedule')) {
                     console.log('Show schedule clicked');
+                    event.preventDefault();
                     executeCommand('show-schedule');
-                });
-            }
-            if (btnAutoFollow) {
-                btnAutoFollow.addEventListener('click', () => {
+                }
+                else if (target.id === 'btnAutoFollow' || target.closest('#btnAutoFollow')) {
                     console.log('Auto follow clicked');
+                    event.preventDefault();
                     executeCommand('auto-follow', {limit: 3});
-                });
-            }
-            if (btnAutoLike) {
-                btnAutoLike.addEventListener('click', () => {
+                }
+                else if (target.id === 'btnAutoLike' || target.closest('#btnAutoLike')) {
                     console.log('Auto like clicked');
+                    event.preventDefault();
                     executeCommand('auto-like', {limit: 5});
-                });
-            }
-            if (btnShowStats) {
-                btnShowStats.addEventListener('click', () => {
+                }
+                else if (target.id === 'btnShowStats' || target.closest('#btnShowStats')) {
                     console.log('Show stats clicked');
+                    event.preventDefault();
                     executeCommand('show-stats');
-                });
-            }
+                }
+            });
+            
+            // ボタンが存在するか確認
+            const buttons = document.querySelectorAll('.command-btn');
+            console.log('Found buttons:', buttons.length);
+            buttons.forEach(btn => {
+                console.log('Button:', btn.id, btn.textContent);
+            });
             
             console.log('Event listeners setup complete');
         }
         
         // ページ読み込み時の処理
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
-                console.log('DOM loaded, initializing...');
-                setupEventListeners();
-                refreshDashboard();
-            });
-        } else {
-            // すでにDOMが読み込まれている場合
-            console.log('DOM already loaded, initializing...');
+        function initialize() {
+            console.log('Initializing X-buzz dashboard...');
             setupEventListeners();
             refreshDashboard();
+            
+            // ボタンのクリック可能テスト
+            setTimeout(() => {
+                const testBtn = document.getElementById('btnShowStats');
+                if (testBtn) {
+                    console.log('Test button found:', testBtn);
+                    console.log('Button disabled:', testBtn.disabled);
+                    console.log('Button display:', window.getComputedStyle(testBtn).display);
+                    console.log('Button pointer-events:', window.getComputedStyle(testBtn).pointerEvents);
+                }
+            }, 1000);
+        }
+        
+        // DOMが完全に読み込まれた後に実行
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initialize);
+        } else {
+            // すでにDOMが読み込まれている場合
+            initialize();
         }
         
         // Auto refresh every 30 seconds
