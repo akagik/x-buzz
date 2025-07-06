@@ -6,12 +6,15 @@ import config from '../config/index.js';
 class RateLimiter {
   constructor() {
     this.limiters = new Map();
-    this.initialize();
+    this.initialized = false;
   }
 
   initialize() {
+    if (this.initialized) return;
+    
     this.setupLimiters();
     this.loadLimitsFromConfig();
+    this.initialized = true;
     logger.info('Rate limiter initialized');
   }
 

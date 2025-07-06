@@ -278,6 +278,10 @@ class DatabaseManager {
   }
 
   getSetting(key) {
+    if (!this.db) {
+      logger.warn(`Database not initialized. Cannot get setting: ${key}`);
+      return null;
+    }
     const stmt = this.db.prepare('SELECT value FROM settings WHERE key = ?');
     const result = stmt.get(key);
     return result ? result.value : null;
@@ -296,17 +300,26 @@ class DatabaseManager {
   getStats() {
     const stats = {};
 
-    stats.totalContents = this.db.prepare('SELECT COUNT(*) as count FROM contents').get().count;
-    stats.analyzedContents = this.db.prepare('SELECT COUNT(*) as count FROM contents WHERE analyzed = 1').get().count;
-    stats.totalPosts = this.db.prepare('SELECT COUNT(*) as count FROM posts').get().count;
-    stats.postedPosts = this.db.prepare('SELECT COUNT(*) as count FROM posts WHERE status = "posted"').get().count;
-    stats.scheduledPosts = this.db.prepare('SELECT COUNT(*) as count FROM posts WHERE status = "scheduled"').get().count;
-    stats.totalUsers = this.db.prepare('SELECT COUNT(*) as count FROM users').get().count;
-    stats.followingUsers = this.db.prepare('SELECT COUNT(*) as count FROM users WHERE is_following = 1').get().count;
-    stats.todayInteractions = this.db.prepare(`
-      SELECT COUNT(*) as count FROM interactions 
-      WHERE date(performed_at) = date('now')
-    `).get().count;
+    try {
+      stats.totalContents = this.db.prepare('SELECT COUNT(*) as count FROM contents').get().count;
+      stats.analyzedContents = this.db.prepare('SELECT COUNT(*) as count FROM contents WHERE analyzed = 1').get().count;
+      stats.totalPosts = this.db.prepare('SELECT COUNT(*) as count FROM posts').get().count;
+      
+      // デバッグ: クエリを確認
+      const query = "SELECT COUNT(*) as count FROM posts WHERE status = 'posted'";
+      logger.debug('Executing query:', query);
+      stats.postedPosts = this.db.prepare(query).get().count;
+      stats.scheduledPosts = this.db.prepare("SELECT COUNT(*) as count FROM posts WHERE status = 'scheduled'").get().count;
+      stats.totalUsers = this.db.prepare('SELECT COUNT(*) as count FROM users').get().count;
+      stats.followingUsers = this.db.prepare('SELECT COUNT(*) as count FROM users WHERE is_following = 1').get().count;
+      stats.todayInteractions = this.db.prepare(`
+        SELECT COUNT(*) as count FROM interactions 
+        WHERE date(performed_at) = date('now')
+      `).get().count;
+    } catch (error) {
+      logger.error('Error in getStats:', error);
+      throw error;
+    }
 
     return stats;
   }

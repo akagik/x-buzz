@@ -74,7 +74,8 @@ class OpenAIClient {
             role: 'system',
             content: `あなたはAI-buzzエージェントの意思決定システムです。
             現在の状態とコンテキストに基づいて、最適なアクションを選択してください。
-            選択は戦略的で、エンゲージメントを最大化することを目指してください。`,
+            選択は戦略的で、エンゲージメントを最大化することを目指してください。
+            必ずJSON形式で応答してください。`,
           },
           {
             role: 'user',
@@ -104,7 +105,7 @@ class OpenAIClient {
         messages: [
           {
             role: 'system',
-            content: 'あなたはソーシャルメディアユーザー分析の専門家です。フォローすべきユーザーを特定します。',
+            content: 'あなたはソーシャルメディアユーザー分析の専門家です。フォローすべきユーザーを特定します。必ずJSON形式で応答してください。',
           },
           {
             role: 'user',
@@ -137,7 +138,7 @@ class OpenAIClient {
             content: JSON.stringify({
               currentSchedule,
               performanceData,
-              instruction: '最適な投稿時間と頻度を提案してください。',
+              instruction: '最適な投稿時間と頻度を提案してください。JSON形式で応答してください。',
             }),
           },
         ],

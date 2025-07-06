@@ -1,4 +1,5 @@
 import cron from 'node-cron';
+import parser from 'cron-parser';
 import { v4 as uuidv4 } from 'uuid';
 import db from '../database/db.js';
 import logger from '../utils/logger.js';
@@ -12,8 +13,8 @@ class Scheduler {
 
   initialize() {
     try {
-      this.loadSchedulesFromDb();
       this.setupDefaultSchedules();
+      this.loadSchedulesFromDb();
       logger.info('Scheduler initialized successfully');
     } catch (error) {
       logger.error('Error initializing scheduler:', error);
@@ -243,8 +244,23 @@ class Scheduler {
   }
 
   getNextRun(cronExpression) {
-    const interval = cron.parseExpression(cronExpression);
-    return interval.next().toISOString();
+    try {
+      // node-cronで検証
+      if (!cron.validate(cronExpression)) {
+        throw new Error('Invalid cron expression');
+      }
+      
+      // 現在時刻から次の実行時刻を計算
+      const now = new Date();
+      const interval = parser.CronExpressionParser.parse(cronExpression);
+      return interval.next().toISOString();
+    } catch (error) {
+      logger.error(`Error parsing cron expression: ${cronExpression}`, error);
+      // デフォルトで1時間後を返す
+      const futureDate = new Date();
+      futureDate.setHours(futureDate.getHours() + 1);
+      return futureDate.toISOString();
+    }
   }
 
   shutdown() {

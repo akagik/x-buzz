@@ -25,6 +25,9 @@ class AIBuzzAgent {
       // Initialize database
       db.initialize();
       
+      // Initialize rate limiter after database
+      rateLimiter.initialize();
+      
       // Register commands with async loading
       await commandHandler.registerDefaultCommands();
       

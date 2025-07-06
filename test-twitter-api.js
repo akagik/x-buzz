@@ -112,8 +112,26 @@ async function testTwitterAPI() {
       console.error('\n🚫 アクセス拒否エラーです。以下を確認してください:');
       console.error('   1. アプリの権限設定');
       console.error('   2. アカウントの制限状態');
-    } else if (error.code === 429) {
-      console.error('\n⏳ レート制限エラーです。しばらく待ってから再試行してください。');
+    } else if (error.code === 429 || error.status === 429) {
+      console.error('\n⏳ レート制限エラーです。');
+      console.error('\n📊 レート制限の詳細:');
+      console.error('   - ツイート投稿: 15分間で50件まで');
+      console.error('   - 1日あたり: 300件まで（v2 API）');
+      console.error('\n💡 対処法:');
+      console.error('   1. 15分以上待ってから再試行してください');
+      console.error('   2. レート制限をリセットする時間を確認してください');
+      
+      // レスポンスヘッダーからレート制限情報を取得
+      if (error.headers) {
+        const resetTime = error.headers['x-rate-limit-reset'];
+        if (resetTime) {
+          const resetDate = new Date(parseInt(resetTime) * 1000);
+          const now = new Date();
+          const waitMinutes = Math.ceil((resetDate - now) / 60000);
+          console.error(`\n⏰ レート制限リセット時刻: ${resetDate.toLocaleString('ja-JP')}`);
+          console.error(`   約 ${waitMinutes} 分後にリセットされます`);
+        }
+      }
     }
   }
 }
