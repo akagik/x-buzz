@@ -105,11 +105,26 @@ class OpenAIClient {
         messages: [
           {
             role: 'system',
-            content: 'あなたはソーシャルメディアユーザー分析の専門家です。フォローすべきユーザーを特定します。必ずJSON形式で応答してください。',
+            content: `あなたはソーシャルメディアユーザー分析の専門家です。ユーザープロフィールを分析し、フォローすべきかどうか判断します。
+必ず以下のJSON形式で応答してください：
+{
+  "should_follow": true/false,
+  "follow_score": 0.0-1.0,
+  "follow_reason": "フォローする理由（または理由がない場合の説明）",
+  "user_category": "ユーザーのカテゴリ（例：AI研究者、エンジニア、インフルエンサーなど）",
+  "relevance_score": 0.0-1.0
+}`,
           },
           {
             role: 'user',
-            content: `次のユーザープロフィールを分析し、フォローすべきかどうか判断してください: ${JSON.stringify(userProfile)}`,
+            content: `次のユーザープロフィールを分析してください:
+Username: ${userProfile.username}
+Bio: ${userProfile.bio || 'なし'}
+Followers: ${userProfile.metrics?.followers_count || 0}
+Following: ${userProfile.metrics?.following_count || 0}
+Tweets: ${userProfile.metrics?.tweet_count || 0}
+
+このユーザーはAI/技術関連のコンテンツに興味があるアカウントにとってフォローする価値があるか判断してください。`,
           },
         ],
         temperature: 0.5,

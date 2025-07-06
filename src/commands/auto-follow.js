@@ -36,7 +36,21 @@ export default {
       
       const maxFollows = Math.min(limit, rateCheck.remaining);
       
+      // Get both analyzed and unanalyzed users
       let potentialUsers = db.getPotentialFollowTargets(maxFollows * 2);
+      
+      // If not enough analyzed users, get unanalyzed ones
+      if (potentialUsers.length < maxFollows) {
+        const unanalyzedUsers = db.db.prepare(`
+          SELECT * FROM users 
+          WHERE is_following = 0 
+            AND (analysis_result IS NULL OR analysis_result = '')
+          ORDER BY CAST(json_extract(metrics, '$.followers_count') AS INTEGER) DESC
+          LIMIT ?
+        `).all(maxFollows * 2).map(db._parseJsonFields.bind(db));
+        
+        potentialUsers = [...potentialUsers, ...unanalyzedUsers];
+      }
       
       if (potentialUsers.length < maxFollows && keywords) {
         try {
