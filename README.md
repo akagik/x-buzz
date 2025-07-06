@@ -111,6 +111,9 @@ TWITTER_ACCESS_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 TWITTER_ACCESS_TOKEN_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 TWITTER_BEARER_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
+# Web UI Configuration (ブラウザから管理画面を使う場合)
+WEB_UI_ENABLED=true
+
 # その他の設定はデフォルト値のままでOK
 ```
 
@@ -145,7 +148,28 @@ npm run dev
 
 ### 5. Web UIへのアクセス
 
-ブラウザで http://localhost:3000 にアクセスすると、管理画面が表示されます。
+Web UIを有効にするには、`.env`ファイルに以下を追加してください：
+
+```bash
+WEB_UI_ENABLED=true
+```
+
+設定後、アプリケーションを起動してブラウザで http://localhost:3000 にアクセスすると、管理ダッシュボードが表示されます。
+
+#### Web UIの機能
+
+- **統計情報の表示**: コンテンツ数、投稿数、フォロー数などをリアルタイムで確認
+- **レート制限の監視**: 各種アクションの使用状況を視覚的に確認
+- **コマンドの実行**: ボタンクリックで各種コマンドを実行
+  - バズコンテンツ検索
+  - 投稿作成
+  - スケジュール表示
+  - 自動フォロー
+  - 自動いいね
+  - 詳細統計
+- **アクティビティログ**: 最近のシステム動作を確認
+
+注意: Web UIはデフォルトでは無効になっています。セキュリティのため、本番環境では適切なアクセス制御を設定することを推奨します。
 
 ## 使用方法
 
