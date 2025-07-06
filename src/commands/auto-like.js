@@ -7,7 +7,7 @@ import apiTierManager from '../config/api-tier.js';
 
 export default {
   description: '他ユーザーの自動いいね機能',
-  usage: 'auto-like [--limit=10] [--strategy=engagement]',
+  usage: 'auto-like [--limit=10] [--strategy=engagement|trending|simple|mutual]',
   
   async execute(args = {}) {
     try {
@@ -41,6 +41,16 @@ export default {
       // Check if getTweetsToLike returned an error
       if (tweets && tweets.error) {
         return tweets;
+      }
+      
+      // Check if no tweets were found
+      if (!tweets || tweets.length === 0) {
+        return {
+          success: false,
+          message: 'No tweets found to like. This may be due to rate limits or no matching content.',
+          strategy,
+          suggestion: 'Try again later or use a different strategy (simple, trending, engagement, mutual)'
+        };
       }
       
       const liked = [];
@@ -108,12 +118,20 @@ export default {
         
         const tweets = [];
         for (const user of followingUsers) {
-          const timeline = await twitterClient.getUserTimeline(user.user_id, {
-            maxResults: 5,
-          });
-          // Skip if error response
-          if (timeline && !timeline.error) {
-            tweets.push(...timeline);
+          try {
+            const timeline = await twitterClient.getUserTimeline(user.user_id, {
+              maxResults: 5,
+            });
+            // Skip if error response
+            if (timeline && !timeline.error) {
+              tweets.push(...timeline);
+            }
+          } catch (error) {
+            if (error.code === 429) {
+              logger.warn('Rate limit hit, skipping user timeline fetch');
+              break;
+            }
+            logger.error(`Error fetching timeline for user ${user.user_id}:`, error.message);
           }
         }
         
@@ -123,25 +141,65 @@ export default {
       }
       
       case 'trending': {
-        const trends = await twitterClient.getTrendingTopics();
-        // Return error if trends fetch failed
-        if (trends && trends.error) {
-          return trends;
-        }
-        
-        const tweets = [];
-        
-        for (const trend of (trends || []).slice(0, 3)) {
-          const searchResults = await twitterClient.searchTweets(trend.name, {
-            maxResults: 10,
-          });
-          // Skip if error response
-          if (searchResults && !searchResults.error) {
-            tweets.push(...searchResults);
+        try {
+          const trends = await twitterClient.getTrendingTopics();
+          // Return error if trends fetch failed
+          if (trends && trends.error) {
+            return trends;
           }
+          
+          const tweets = [];
+          
+          for (const trend of (trends || []).slice(0, 3)) {
+            try {
+              const searchResults = await twitterClient.searchTweets(trend.name, {
+                maxResults: 10,
+              });
+              // Skip if error response
+              if (searchResults && !searchResults.error) {
+                tweets.push(...searchResults);
+              }
+              
+              // If we have enough tweets, stop searching
+              if (tweets.length >= limit * 2) break;
+            } catch (error) {
+              if (error.code === 429) {
+                logger.warn('Rate limit hit, using existing tweets');
+                break;
+              }
+              logger.error(`Error searching for trend ${trend.name}:`, error.message);
+            }
+          }
+          
+          return tweets.slice(0, limit);
+        } catch (error) {
+          if (error.code === 429) {
+            logger.warn('Rate limit hit on trending topics');
+            return [];
+          }
+          throw error;
         }
-        
-        return tweets.slice(0, limit);
+      }
+      
+      case 'simple': {
+        // Simple strategy that searches for popular content once
+        try {
+          const tweets = await twitterClient.searchTweets('AI OR technology OR programming -is:retweet lang:ja', {
+            maxResults: Math.min(limit * 2, 20),
+          });
+          
+          if (tweets && tweets.error) {
+            return tweets;
+          }
+          
+          return tweets || [];
+        } catch (error) {
+          if (error.code === 429) {
+            logger.warn('Rate limit hit on search');
+            return [];
+          }
+          throw error;
+        }
       }
       
       case 'mutual': {

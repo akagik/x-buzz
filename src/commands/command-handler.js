@@ -15,6 +15,7 @@ class CommandHandler {
       { name: 'search-users', module: './search-users.js' },
       { name: 'auto-follow', module: './auto-follow.js' },
       { name: 'auto-like', module: './auto-like.js' },
+      { name: 'auto-like-test', module: './auto-like-test.js' },
       { name: 'analyze-performance', module: './analyze-performance.js' },
       { name: 'update-settings', module: './update-settings.js' },
       { name: 'show-stats', module: './show-stats.js' },
